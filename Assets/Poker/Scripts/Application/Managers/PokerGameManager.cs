@@ -18,6 +18,7 @@ public class PokerGameManager : MonoBehaviour
     void Start()
     {
         StartMatch();
+        Subscribevents();
     }
 
     public void StartMatch()
@@ -52,9 +53,7 @@ public class PokerGameManager : MonoBehaviour
         _turnManager = new TurnManager(_snapshot);
 
        
-        EventManager.Instance.Subscribe(GameEvents.TURN_STARTED, OnTurnStarted);
-        EventManager.Instance.Subscribe(GameEvents.PLAYER_ACTION, OnPlayerAction);
-        EventManager.Instance.Subscribe(GameEvents.BETTING_ROUND_COMPLETE, OnBettingRoundComplete);
+        
 
         
         _stateController.ChangeState(new PreFlopState());
@@ -62,6 +61,15 @@ public class PokerGameManager : MonoBehaviour
       
         _turnManager.StartTurn();
         
+       
+    }
+
+
+    private void Subscribevents()
+    {
+        EventManager.Instance.Subscribe(GameEvents.TURN_STARTED, OnTurnStarted);
+        EventManager.Instance.Subscribe(GameEvents.PLAYER_ACTION, OnPlayerAction);
+        EventManager.Instance.Subscribe(GameEvents.BETTING_ROUND_COMPLETE, OnBettingRoundComplete);
         EventManager.Instance.TriggerEvent(GameEvents.STATE_CHANGED, _snapshot);
     }
     
