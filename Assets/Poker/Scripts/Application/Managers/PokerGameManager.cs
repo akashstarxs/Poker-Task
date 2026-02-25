@@ -6,6 +6,7 @@ public class PokerGameManager : MonoBehaviour
 {
     private GameSnapshot _snapshot;
     private GameStateController _stateController;
+    private TurnManager _turnManager;
 
     void Start()
     {
@@ -16,6 +17,8 @@ public class PokerGameManager : MonoBehaviour
     {
         _stateController = new GameStateController(_snapshot);
         _stateController.ChangeState(new PreFlopState());
+        _turnManager = new TurnManager(_snapshot);
+        _turnManager.StartTurn();
         _snapshot = new GameSnapshot
         {
             Players = new()
@@ -29,5 +32,13 @@ public class PokerGameManager : MonoBehaviour
         };
 
         EventManager.Instance.TriggerEvent(GameEvents.STATE_CHANGED, _snapshot);
+        EventManager.Instance.Subscribe(GameEvents.PLAYER_ACTION, OnPlayerAction);
+    }
+    
+    private void OnPlayerAction(object data)
+    {
+        // Process bet / fold later
+
+        _turnManager.EndTurn();
     }
 }
