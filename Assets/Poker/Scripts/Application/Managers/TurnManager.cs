@@ -3,6 +3,7 @@ using Poker.Core.Models;
 public class TurnManager
 {
     private readonly GameSnapshot _snapshot;
+    private int _actionsThisRound;
 
     public TurnManager(GameSnapshot snapshot)
     {
@@ -23,12 +24,7 @@ public class TurnManager
             player
         );
     }
-
-    public void EndTurn()
-    {
-        MoveNext();
-        StartTurn();
-    }
+    
 
     private void MoveNext()
     {
@@ -36,5 +32,26 @@ public class TurnManager
 
         if (_snapshot.CurrentPlayerIndex >= _snapshot.Players.Count)
             _snapshot.CurrentPlayerIndex = 0;
+    }
+    public void EndTurn()
+    {
+        _actionsThisRound++;
+
+        if (IsBettingRoundComplete())
+        {
+            EventManager.Instance.TriggerEvent(GameEvents.BETTING_ROUND_COMPLETE, null);
+            return;
+        }
+
+        MoveNext();
+        StartTurn();
+    }
+    private bool IsBettingRoundComplete()
+    {
+        return _actionsThisRound >= _snapshot.Players.Count;
+    }
+    public void ResetRoundCounter()
+    {
+        _actionsThisRound = 0;
     }
 }
