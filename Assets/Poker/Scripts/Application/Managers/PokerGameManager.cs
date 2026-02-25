@@ -103,6 +103,7 @@ public class PokerGameManager : MonoBehaviour
                 break;
 
             case PokerRound.Showdown:
+                ResolveShowdown();
                 RestartMatch();
                 break;
         }
@@ -117,6 +118,7 @@ public class PokerGameManager : MonoBehaviour
         _potService.DistributeToWinner(winner);
 
         EventManager.Instance.TriggerEvent(GameEvents.POT_UPDATED, _potService.Pot);
+        EventManager.Instance.TriggerEvent(GameEvents.SHOWDOWN_RESULT, winner);
     }
     
     private void RestartMatch()
