@@ -5,6 +5,7 @@ using UnityEngine;
 public class PokerGameManager : MonoBehaviour
 {
     private GameSnapshot _snapshot;
+    private GameStateController _stateController;
 
     void Start()
     {
@@ -13,6 +14,8 @@ public class PokerGameManager : MonoBehaviour
 
     public void StartMatch()
     {
+        _stateController = new GameStateController(_snapshot);
+        _stateController.ChangeState(new PreFlopState());
         _snapshot = new GameSnapshot
         {
             Players = new()
