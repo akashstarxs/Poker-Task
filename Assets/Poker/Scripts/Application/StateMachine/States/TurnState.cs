@@ -6,6 +6,7 @@ public class TurnState : IGameState
     public void Enter(GameSnapshot snapshot)
     {
         snapshot.Round = PokerRound.Turn;
+        DealServiceLocator.DealService.DealTurn(snapshot);
         UnityEngine.Debug.Log("Entered Turn");
     }
 

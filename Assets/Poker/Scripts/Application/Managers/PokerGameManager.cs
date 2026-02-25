@@ -9,6 +9,9 @@ public class PokerGameManager : MonoBehaviour
     private TurnManager _turnManager;
     private PotService _potService;
     private BetService _betService;
+    private DeckService _deckService;
+    private DealService _dealService;
+    private HandEvaluator _handEvaluator;
 
     void Start()
     {
@@ -37,6 +40,14 @@ public class PokerGameManager : MonoBehaviour
         
         _potService = new PotService();
         _betService = new BetService(_potService);
+        
+        _deckService = new DeckService();
+        _deckService.Initialize();
+
+        _dealService = new DealService(_deckService);
+        DealServiceLocator.DealService = _dealService;
+        
+        _handEvaluator = new HandEvaluator();
 
         EventManager.Instance.TriggerEvent(GameEvents.STATE_CHANGED, _snapshot);
         EventManager.Instance.Subscribe(GameEvents.PLAYER_ACTION, OnPlayerAction);
@@ -90,7 +101,7 @@ public class PokerGameManager : MonoBehaviour
     
     private void ResolveShowdown()
     {
-        var winner = _snapshot.Players[0]; // replace with evaluator later
+        var winner = _handEvaluator.DetermineWinner(_snapshot);
 
         _potService.DistributeToWinner(winner);
 

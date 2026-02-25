@@ -6,14 +6,11 @@ public class PreFlopState : IGameState
     public void Enter(GameSnapshot snapshot)
     {
         snapshot.Round = PokerRound.PreFlop;
-
-        // Deal cards 
-        // Start betting
+        
+        DealServiceLocator.DealService.DealHoleCards(snapshot);
 
         UnityEngine.Debug.Log("Entered PreFlop");
     }
 
-    public void Exit(GameSnapshot snapshot)
-    {
-    }
+    public void Exit(GameSnapshot snapshot) { }
 }

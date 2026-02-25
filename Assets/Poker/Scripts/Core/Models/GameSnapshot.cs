@@ -10,5 +10,7 @@ namespace Poker.Core.Models
         public int Pot;
         public int CurrentPlayerIndex;
         public PokerRound Round;
+        public Dictionary<string, List<Card>> PlayerHands = new();
+        public List<Card> CommunityCards = new();
     }
 }
