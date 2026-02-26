@@ -7,10 +7,10 @@ using Poker.Core.Enums;
 
 public class MultiplayerUI : MonoBehaviour
 {
-    [Header("Refs")]
+
     [SerializeField] MultiplayerGameController controller;
 
-    [Header("UI")]
+   
     [SerializeField] TMP_Text roundText;
     [SerializeField] TMP_Text potText;
 
@@ -34,10 +34,7 @@ public class MultiplayerUI : MonoBehaviour
         EventManager.Instance.Unsubscribe(GameEvents.STATE_CHANGED, OnSnapshot);
     }
 
-    // =========================
-    // SNAPSHOT
-    // =========================
-
+    
     void OnSnapshot(object data)
     {
         _snapshot = (GameSnapshot)data;
@@ -50,9 +47,6 @@ public class MultiplayerUI : MonoBehaviour
         UpdateTurnUI();
     }
 
-    // =========================
-    // TURN OWNERSHIP (minimal)
-    // =========================
 
     void UpdateTurnUI()
     {
@@ -66,9 +60,7 @@ public class MultiplayerUI : MonoBehaviour
         buttonsPanel.SetActive(isMyTurn);
     }
 
-    // =========================
-    // ACTIONS
-    // =========================
+
 
     public void Bet() => Send(ActionType.Bet, 50);
     public void Call() => Send(ActionType.Call, 20);
@@ -80,12 +72,13 @@ public class MultiplayerUI : MonoBehaviour
         controller.SendActionServerRpc((int)type, amount);
     }
 
-    // =========================
-    // RENDERING
-    // =========================
+
 
     void RenderCommunity()
     {
+        if (_snapshot == null) return;
+        if (_snapshot.CommunityCards == null) return;
+
         Clear(communityPanel);
 
         foreach (var card in _snapshot.CommunityCards)
@@ -97,31 +90,35 @@ public class MultiplayerUI : MonoBehaviour
 
     void RenderHands()
     {
+        if (_snapshot == null) return;
+        if (_snapshot.PlayerHands == null) return;
+        if (_snapshot.Players == null || _snapshot.Players.Count == 0) return;
+
         Clear(playerPanel);
         Clear(opponentPanel);
 
-        var myId = NetworkManager.Singleton.LocalClientId.ToString();
+        var player = _snapshot.Players.FirstOrDefault(p => !p.IsAI);
+        var ai = _snapshot.Players.FirstOrDefault(p => p.IsAI);
 
-        var me = _snapshot.Players.FirstOrDefault(p => p.Id == myId);
-        var opp = _snapshot.Players.FirstOrDefault(p => p.Id != myId);
-
-        if (me != null && _snapshot.PlayerHands.ContainsKey(me.Id))
+        if (player != null &&
+            _snapshot.PlayerHands.ContainsKey(player.Id) &&
+            _snapshot.PlayerHands[player.Id] != null)
         {
-            foreach (var c in _snapshot.PlayerHands[me.Id])
+            foreach (var card in _snapshot.PlayerHands[player.Id])
             {
                 var v = Instantiate(cardPrefab, playerPanel);
-                v.Bind(c);
+                v.Bind(card);
             }
         }
 
-        // opponent hidden until showdown
-        if (_snapshot.Round == PokerRound.Showdown && opp != null &&
-            _snapshot.PlayerHands.ContainsKey(opp.Id))
+        if (ai != null &&
+            _snapshot.PlayerHands.ContainsKey(ai.Id) &&
+            _snapshot.PlayerHands[ai.Id] != null)
         {
-            foreach (var c in _snapshot.PlayerHands[opp.Id])
+            foreach (var card in _snapshot.PlayerHands[ai.Id])
             {
                 var v = Instantiate(cardPrefab, opponentPanel);
-                v.Bind(c);
+                v.Bind(card);
             }
         }
     }
