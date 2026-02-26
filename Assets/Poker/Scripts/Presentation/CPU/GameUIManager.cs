@@ -3,7 +3,6 @@ using TMPro;
 using UnityEngine;
 using Poker.Core.Models;
 using System.Linq;
-using Unity.Netcode;
 
 public class GameUIManager : MonoBehaviour
 {
@@ -24,7 +23,6 @@ public class GameUIManager : MonoBehaviour
 
     private GameSnapshot _snapshot;
     private Player _current;
-    private ulong _turnOwnerClientId;
 
     private void OnEnable()
     {
@@ -32,7 +30,6 @@ public class GameUIManager : MonoBehaviour
         EventManager.Instance.Subscribe(GameEvents.TURN_STARTED, OnTurn);
         EventManager.Instance.Subscribe(GameEvents.POT_UPDATED, OnPot);
         EventManager.Instance.Subscribe(GameEvents.SHOWDOWN_RESULT, OnWinner);
-        EventManager.Instance.Subscribe(GameEvents.TURN_OWNER_CHANGED, OnTurnOwnerChanged);
     }
 
     private void OnDisable()
@@ -42,7 +39,6 @@ public class GameUIManager : MonoBehaviour
         EventManager.Instance.Unsubscribe(GameEvents.TURN_STARTED, OnTurn);
         EventManager.Instance.Unsubscribe(GameEvents.POT_UPDATED, OnPot);
         EventManager.Instance.Unsubscribe(GameEvents.SHOWDOWN_RESULT, OnWinner);
-        EventManager.Instance.Unsubscribe(GameEvents.TURN_OWNER_CHANGED, OnTurnOwnerChanged);
     }
     
     void OnWinner(object data)
@@ -58,14 +54,6 @@ public class GameUIManager : MonoBehaviour
         yield return new WaitForSeconds(3f);
         WinnerPanel.SetActive(false);
         WinnerText.text = string.Empty;
-    }
-    
-    void OnTurnOwnerChanged(object data)
-    {
-        _turnOwnerClientId = (ulong)data;
-
-        bool myTurn = NetworkManager.Singleton.LocalClientId == _turnOwnerClientId;
-        buttonsPanel.SetActive(myTurn);
     }
 
     private void OnState(object data)

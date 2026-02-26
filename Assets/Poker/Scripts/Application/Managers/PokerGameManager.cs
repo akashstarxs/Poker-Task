@@ -15,42 +15,28 @@ public class PokerGameManager : MonoBehaviour
     private HandEvaluator _handEvaluator;
     private AIDecisionService _ai;
 
-    public System.Action<GameSnapshot> OnSnapshotChanged;
-
     void Start()
     {
-        SubscribeEvents();
         StartMatch();
+        Subscribevents();
     }
 
     public void StartMatch()
     {
-        // If multiplayer injected players → keep them
-        if (_snapshot == null)
+    
+        _snapshot = new GameSnapshot
         {
-            _snapshot = new GameSnapshot
-            {
-                Players = new(),
-                Round = PokerRound.PreFlop,
-                CurrentPlayerIndex = 0,
-                Pot = 0
-            };
-        }
-
-        // Single player fallback
-        if (_snapshot.Players == null || _snapshot.Players.Count == 0)
-        {
-            _snapshot.Players = new()
+            Players = new()
             {
                 new Player("1","Player",1000,false),
                 new Player("2","AI",1000,true)
-            };
-        }
+            },
+            Round = PokerRound.PreFlop,
+            CurrentPlayerIndex = 0,
+            Pot = 0
+        };
 
-        _snapshot.Round = PokerRound.PreFlop;
-        _snapshot.CurrentPlayerIndex = 0;
-        _snapshot.Pot = 0;
-
+    
         _deckService = new DeckService();
         _deckService.Initialize();
 
@@ -60,33 +46,33 @@ public class PokerGameManager : MonoBehaviour
         _potService = new PotService();
         _betService = new BetService(_potService);
         _handEvaluator = new HandEvaluator();
+        _ai = new AIDecisionService(_handEvaluator);
 
-        // Only create AI if any AI player exists
-        if (_snapshot.Players.Exists(p => p.IsAI))
-            _ai = new AIDecisionService(_handEvaluator);
-
+  
         _stateController = new GameStateController(_snapshot);
         _turnManager = new TurnManager(_snapshot);
 
-        _stateController.ChangeState(new PreFlopState());
-        _turnManager.StartTurn();
+       
+        
 
-        EmitSnapshot();
+        
+        _stateController.ChangeState(new PreFlopState());
+
+      
+        _turnManager.StartTurn();
+        
+       
     }
 
-    private void SubscribeEvents()
+
+    private void Subscribevents()
     {
         EventManager.Instance.Subscribe(GameEvents.TURN_STARTED, OnTurnStarted);
         EventManager.Instance.Subscribe(GameEvents.PLAYER_ACTION, OnPlayerAction);
         EventManager.Instance.Subscribe(GameEvents.BETTING_ROUND_COMPLETE, OnBettingRoundComplete);
-    }
-
-    private void EmitSnapshot()
-    {
-        OnSnapshotChanged?.Invoke(_snapshot);
         EventManager.Instance.TriggerEvent(GameEvents.STATE_CHANGED, _snapshot);
     }
-
+    
     private void OnPlayerAction(object data)
     {
         var action = (PlayerAction)data;
@@ -96,16 +82,14 @@ public class PokerGameManager : MonoBehaviour
         EventManager.Instance.TriggerEvent(GameEvents.POT_UPDATED, _potService.Pot);
 
         _turnManager.EndTurn();
-
-        EmitSnapshot();
     }
-
+    
     private void OnBettingRoundComplete(object _)
     {
         _turnManager.ResetRoundCounter();
         AdvanceRound();
     }
-
+    
     private void AdvanceRound()
     {
         switch (_snapshot.Round)
@@ -129,13 +113,12 @@ public class PokerGameManager : MonoBehaviour
             case PokerRound.Showdown:
                 ResolveShowdown();
                 RestartMatch();
-                return;
+                break;
         }
 
         _turnManager.StartTurn();
-        EmitSnapshot();
     }
-
+    
     private void ResolveShowdown()
     {
         var winner = _handEvaluator.DetermineWinner(_snapshot);
@@ -144,58 +127,67 @@ public class PokerGameManager : MonoBehaviour
 
         EventManager.Instance.TriggerEvent(GameEvents.POT_UPDATED, _potService.Pot);
         EventManager.Instance.TriggerEvent(GameEvents.SHOWDOWN_RESULT, winner);
-
-        EmitSnapshot();
     }
-
+    
     private void RestartMatch()
     {
         StartMatch();
+
         EventManager.Instance.TriggerEvent(GameEvents.MATCH_RESTART, null);
     }
-
+    
     private void OnTurnStarted(object data)
     {
         var player = (Player)data;
 
-        if (_ai == null || !player.IsAI) return;
+        if (!player.IsAI) return;
 
         var action = _ai.Decide(_snapshot, player);
+
+        // small delay feels realistic (optional)
         StartCoroutine(ExecuteAI(action));
     }
-
+    
     private IEnumerator ExecuteAI(PlayerAction action)
     {
         yield return new WaitForSeconds(1f);
+
         EventManager.Instance.TriggerEvent(GameEvents.PLAYER_ACTION, action);
     }
-
-    // =========================
-    // Multiplayer Extensions
-    // =========================
-
+    
+    /// <summary>
+    /// Multiplayer Extensions for Server RPC
+    /// </summary>
+    /// <param name="clientId"></param>
+    /// <param name="actionType"></param>
+    /// <param name="amount"></param>
+    public void ReceiveNetworkAction(ulong clientId, int actionType, int amount)
+    {
+        // map clientId → Player
+        // create PlayerAction
+        // call existing OnPlayerAction(action)
+    }
+    
     public void RegisterNetworkPlayer(Player player)
     {
         if (_snapshot == null)
-        {
             _snapshot = new GameSnapshot
             {
                 Players = new(),
                 CurrentPlayerIndex = 0,
                 Pot = 0
             };
-        }
 
-        if (!_snapshot.Players.Exists(p => p.Id == player.Id))
-            _snapshot.Players.Add(player);
+        _snapshot.Players.Add(player);
     }
-
+    
     public void ReceiveNetworkAction(Player player, int actionType, int amount)
     {
         if (_snapshot.Players[_snapshot.CurrentPlayerIndex] != player)
             return;
 
         var action = new PlayerAction(player, (ActionType)actionType, amount);
+
         OnPlayerAction(action);
     }
 }
