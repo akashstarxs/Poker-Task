@@ -1,5 +1,6 @@
 public static class GameEvents
 {
+    public const string TURN_OWNER_CHANGED = "TURN_OWNER_CHANGED";
     public const string STATE_CHANGED = "STATE_CHANGED";
     public const string TURN_STARTED = "TURN_STARTED";
     public const string PLAYER_ACTION = "PLAYER_ACTION";
