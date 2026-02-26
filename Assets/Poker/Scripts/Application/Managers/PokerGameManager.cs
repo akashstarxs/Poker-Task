@@ -155,4 +155,39 @@ public class PokerGameManager : MonoBehaviour
         EventManager.Instance.TriggerEvent(GameEvents.PLAYER_ACTION, action);
     }
     
+    /// <summary>
+    /// Multiplayer Extensions for Server RPC
+    /// </summary>
+    /// <param name="clientId"></param>
+    /// <param name="actionType"></param>
+    /// <param name="amount"></param>
+    public void ReceiveNetworkAction(ulong clientId, int actionType, int amount)
+    {
+        // map clientId → Player
+        // create PlayerAction
+        // call existing OnPlayerAction(action)
+    }
+    
+    public void RegisterNetworkPlayer(Player player)
+    {
+        if (_snapshot == null)
+            _snapshot = new GameSnapshot
+            {
+                Players = new(),
+                CurrentPlayerIndex = 0,
+                Pot = 0
+            };
+
+        _snapshot.Players.Add(player);
+    }
+    
+    public void ReceiveNetworkAction(Player player, int actionType, int amount)
+    {
+        if (_snapshot.Players[_snapshot.CurrentPlayerIndex] != player)
+            return;
+
+        var action = new PlayerAction(player, (ActionType)actionType, amount);
+
+        OnPlayerAction(action);
+    }
 }
